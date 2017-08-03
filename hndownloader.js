@@ -1,7 +1,7 @@
 var api = require('./api');
 var query = require('./query');
 
-var concurrentFetch = 100;
+var concurrentFetch = 1000;
 
 var parseItem = function (rawItem, itemTypeMap) {
     let {
@@ -97,7 +97,9 @@ var main = function (maxId, startId, endId, itemTypeMap) {
                 for (let result of results) {
                     let parsedItem = parseItem(result.data, itemTypeMap);
                     if (parsedItem) {
-                        console.log(parsedItem.item.id);
+                        if (parsedItem.item.id % concurrentFetch === 0) {
+                            console.log(parsedItem.item.id + '/' + endId);
+                        }
                         insertPromises.push(query.insert('items', parsedItem.item));
                         insertPromises.push(query.insert('item_relation', parsedItem.itemRelation));
                     }
