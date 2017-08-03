@@ -1,8 +1,7 @@
 var api = require('./api');
 var query = require('./query');
 
-var noOfInsertItem = 100;
-var concurrentFetch = 10;
+var concurrentFetch = 100;
 
 var parseItem = function (rawItem, itemTypeMap) {
     let {
@@ -70,7 +69,7 @@ var parseItem = function (rawItem, itemTypeMap) {
     }
 };
 
-var main = function (maxId, startId, itemTypeMap) {
+var main = function (maxId, startId, endId, itemTypeMap) {
     return new Promise(function (resolve, reject) {
         // Exit if latest item is already inserted
         if (startId === maxId) {
@@ -79,11 +78,17 @@ var main = function (maxId, startId, itemTypeMap) {
             return;
         }
 
+        if (typeof endId === 'undefined') {
+            endId = maxId;
+        } else {
+            endId = Math.min(endId, maxId);
+        }
+
         (function fetchAndInsert(currentId) {
             let fetchAPIPromises = [];
-            let endId = Math.min(currentId + concurrentFetch, startId + noOfInsertItem);
+            let currentFetchEndId = Math.min(currentId + concurrentFetch, endId);
 
-            for (let id = currentId + 1; id <= endId; id++) {
+            for (let id = currentId + 1; id <= currentFetchEndId; id++) {
                 fetchAPIPromises.push(api.getAPIItemById(id));
             }
 
@@ -92,16 +97,16 @@ var main = function (maxId, startId, itemTypeMap) {
                 for (let result of results) {
                     let parsedItem = parseItem(result.data, itemTypeMap);
                     if (parsedItem) {
-                        console.log(parsedItem);
+                        console.log(parsedItem.item.id);
                         insertPromises.push(query.insert('items', parsedItem.item));
                         insertPromises.push(query.insert('item_relation', parsedItem.itemRelation));
                     }
                 }
                 Promise.all(insertPromises).then(function () {
-                    if (endId === startId + noOfInsertItem) {
+                    if (currentFetchEndId === endId) {
                         resolve();
                     } else {
-                        fetchAndInsert(endId);
+                        fetchAndInsert(currentFetchEndId);
                     }
                 }).catch(function (err) {
                     reject(err);
