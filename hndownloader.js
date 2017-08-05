@@ -2,6 +2,7 @@ var api = require('./api');
 var query = require('./query');
 
 var concurrentFetch = 1000;
+var maxRetry = 3;
 
 var parseItem = function (rawItem, itemTypeMap) {
     let {
@@ -84,7 +85,7 @@ var main = function (maxId, startId, endId, itemTypeMap) {
             endId = Math.min(endId, maxId);
         }
 
-        (function fetchAndInsert(currentId) {
+        (function fetchAndInsert(currentId, errors) {
             let fetchAPIPromises = [];
             let currentFetchEndId = Math.min(currentId + concurrentFetch, endId);
 
@@ -108,15 +109,21 @@ var main = function (maxId, startId, endId, itemTypeMap) {
                     if (currentFetchEndId === endId) {
                         resolve();
                     } else {
-                        fetchAndInsert(currentFetchEndId);
+                        fetchAndInsert(currentFetchEndId, 0);
                     }
                 }).catch(function (err) {
                     reject(err);
                 });
             }).catch(function (err) {
-                reject(err);
+                if (errors === maxRetry) {
+                    reject(err);
+                } else {
+                    errors++;
+                    console.error('Network error. Retrying...' + errors + '/' + maxRetry);
+                    fetchAndInsert(currentId, errors);
+                }
             });
-        })(startId);
+        })(startId, 0);
 
     });
 };
