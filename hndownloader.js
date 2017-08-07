@@ -1,8 +1,8 @@
 var api = require('./api');
 var query = require('./query');
+var config = require('./config');
 
-var concurrentFetch = 1000;
-var maxRetry = 3;
+var {concurrentFetch, maxRetry} = config;
 
 var parseItem = function (rawItem, itemTypeMap) {
     if (rawItem === null) {
