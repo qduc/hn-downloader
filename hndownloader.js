@@ -5,6 +5,10 @@ var concurrentFetch = 1000;
 var maxRetry = 3;
 
 var parseItem = function (rawItem, itemTypeMap) {
+    if (rawItem === null) {
+        return false;
+    }
+
     let {
         id,
         deleted,
