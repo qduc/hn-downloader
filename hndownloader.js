@@ -102,7 +102,7 @@ var main = function (maxId, startId, endId, itemTypeMap) {
                 for (let result of results) {
                     let parsedItem = parseItem(result.data, itemTypeMap);
                     if (parsedItem) {
-                        if (parsedItem.item.id % concurrentFetch === 0) {
+                        if ((parsedItem.item.id % concurrentFetch === 0) || parsedItem.item.id === endId) {
                             console.log(parsedItem.item.id + '/' + endId);
                         }
                         insertPromises.push(query.insert('items', parsedItem.item));
